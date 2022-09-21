@@ -22,17 +22,17 @@ typedef struct Queue {
 // Initialize a queue
 Queue* queue_init() {
 	Queue* q = (Queue*)malloc(sizeof(Queue));
-
 	q->head = q->tail = NULL;
-
 	return q;
 }
 
+// check if queue is empty
 int isEmpty(Queue* q) {
   return q->head == NULL;
 }
 
-int top(Queue* q) {
+// Get the value of first element
+int peek(Queue* q) {
   return q->head->value;
 }
 
@@ -88,6 +88,25 @@ void p_enqueue(Queue* q, int val, int priority) {
   }
 }
 
+void c_enqueue(Queue* q, int val) {
+  Node* tmp = (Node*)malloc(sizeof(Node));
+
+	tmp->value = val;
+  tmp->priority = MIN_PRIORITY;
+	tmp->next = NULL;
+
+	// Empty queue
+	if (q->tail == NULL) {
+		q->head = q->tail = tmp;
+    q->tail->next = q->head;
+		return;
+	}
+
+	q->tail->next = tmp;
+	q->tail = tmp;
+  q->tail->next = q->head;
+}
+
 // returns an array with value and priority
 int* dequeue(Queue* q) {
   static int res[2];
@@ -100,9 +119,10 @@ int* dequeue(Queue* q) {
 	Node* tmp = q->head;
   res[0] = tmp->value;
   res[1] = tmp->priority;
+
 	q->head = q->head->next;
 
-	// Queue with one value
+	// if head becomes NULL
 	if (q->head == NULL)
 		q->tail = NULL;
 
@@ -113,14 +133,24 @@ int* dequeue(Queue* q) {
 }
 
 void display_queue(Queue* q, int queue_type) {
-  Node *tmp = q->head;
+  Node* tmp = q->head;
 
   if (tmp == NULL) {
     printf("\n>Empty queue\n");
+    return;
   }
 
   if(queue_type == 2) {
     printf("value(priority): \n");
+  } else if(queue_type == 3) {
+    printf("Address of q->head: %p\n", q->head);
+    printf("Address of q->tail->next: %p\n", q->tail->next);
+    while(tmp->next != q->head) {
+      printf("%d <~~~ ", tmp->value);
+      tmp = tmp->next;
+    }
+    printf("%d", tmp->value);
+    return;
   }
 
   while(tmp != NULL){
@@ -134,7 +164,7 @@ void display_queue(Queue* q, int queue_type) {
     case 2:
       printf("%d(%d) <~~~ ", tmp->value, tmp->priority);
       break;
-    
+
     default:
       printf("\n>Invalid queue type \n");
       break;
@@ -282,6 +312,12 @@ int main() {
             printf("\n>Priority? \n");
             scanf("%d", &p);
             p_enqueue(q, m, p);
+            continue;
+          }
+
+          // Circular queue
+          if(queue_type == 3) {
+            c_enqueue(q, m);
             continue;
           }
 
