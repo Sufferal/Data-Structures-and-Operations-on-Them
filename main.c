@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define QUEUE_EMPTY INT_MIN
+#define MIN_PRIORITY 999
 
 // Linked list
 typedef struct Node {
 	int value;
+  int priority;
 	struct Node* next;
 } Node;
 
@@ -15,16 +18,6 @@ typedef struct Queue {
 	Node *head;
 	Node *tail;
 } Queue;
-
-// Create new node
-Node* create_new_node(int val) {
-	Node* tmp = (Node*)malloc(sizeof(Node));
-
-	tmp->value = val;
-	tmp->next = NULL;
-
-	return tmp;
-}
 
 // Initialize a queue
 Queue* queue_init() {
@@ -35,8 +28,20 @@ Queue* queue_init() {
 	return q;
 }
 
+int isEmpty(Queue* q) {
+  return q->head == NULL;
+}
+
+int top(Queue* q) {
+  return q->head->value;
+}
+
 void enqueue(Queue* q, int val) {
-	Node* tmp = create_new_node(val);
+  Node* tmp = (Node*)malloc(sizeof(Node));
+
+	tmp->value = val;
+  tmp->priority = MIN_PRIORITY;
+	tmp->next = NULL;
 
 	// Empty queue
 	if (q->tail == NULL) {
@@ -48,16 +53,54 @@ void enqueue(Queue* q, int val) {
 	q->tail = tmp;
 }
 
-int dequeue(Queue* q) {
+void p_enqueue(Queue* q, int val, int priority) {
+  Node* new_node = malloc(sizeof(Node));
+
+  new_node->value = val;
+  new_node->next = NULL;
+  new_node->priority = priority;
+
+  if(!isEmpty(q)) {
+    if(new_node->priority < q->head->priority) {
+      new_node->next = q->head;
+      q->head = new_node;
+    }
+    else {
+      Node* prev = q->head;
+      Node* tmp = q->head->next;
+
+      while(tmp != NULL && tmp->priority < new_node->priority) {
+        prev = tmp;
+        tmp = tmp->next;
+      }
+
+      if(tmp == NULL) {
+        prev->next = new_node;
+        q->tail = new_node;
+      } else {
+        new_node->next = tmp;
+        prev->next = new_node;
+      }
+    }
+  } else {
+    q->head = new_node;
+    q->tail = new_node;
+  }
+}
+
+// returns an array with value and priority
+int* dequeue(Queue* q) {
+  static int res[2];
+
 	// Empty queue
-	if (q->head == NULL)
-		return QUEUE_EMPTY;
+	if (isEmpty(q))
+		return res;
 
 	// Store head 
 	Node* tmp = q->head;
+  res[0] = tmp->value;
+  res[1] = tmp->priority;
 	q->head = q->head->next;
-
-  int res = tmp->value;
 
 	// Queue with one value
 	if (q->head == NULL)
@@ -69,15 +112,34 @@ int dequeue(Queue* q) {
   return res;
 }
 
-void display_queue(Queue* q) {
+void display_queue(Queue* q, int queue_type) {
   Node *tmp = q->head;
 
   if (tmp == NULL) {
     printf("\n>Empty queue\n");
   }
 
+  if(queue_type == 2) {
+    printf("value(priority): \n");
+  }
+
   while(tmp != NULL){
-    printf("%d <~~~ ", tmp->value);
+    switch (queue_type) {
+    // normal queue
+    case 1:
+      printf("%d <~~~ ", tmp->value);
+      break;
+
+    // priority queue
+    case 2:
+      printf("%d(%d) <~~~ ", tmp->value, tmp->priority);
+      break;
+    
+    default:
+      printf("\n>Invalid queue type \n");
+      break;
+    }
+
     tmp = tmp->next;
   }
 }
@@ -135,8 +197,8 @@ void sort(Queue* q, int n) {
   return;
 }
 
-void reverse(Queue *q) {
-  int tmp;
+void reverse(Queue *q, int queue_type) {
+  int tmp[2];
 
   // Recursion base case: empty queue
   if (q->head == NULL) {
@@ -145,15 +207,53 @@ void reverse(Queue *q) {
   
   // using stack we dequeue each element
   // then enque the value into the same queue
-  tmp = dequeue(q);
-  reverse(q);
-  enqueue(q, tmp);
+  // tmp = dequeue(q);
+  memcpy(tmp, dequeue(q), sizeof dequeue(q));
+  reverse(q, queue_type);
+
+  if(queue_type == 1) {
+    enqueue(q, tmp[0]);
+  } else if(queue_type == 2) {
+    printf("%d(%d) <~~~ ", tmp[0], tmp[1]);
+    p_enqueue(q, tmp[0], tmp[1]);
+  }
 }
 
 int main() {
 	Queue* q = queue_init();
 
-  int i, n, m, k, s;
+  int i, n, m, p, k, s;
+  /*
+    i - loop variable
+    n - number of elements to enqueue/dequeue
+    m - value of element to enqueue/dequeue
+    p - priority
+    k - interactive menu keyboard variable
+    s - search value variable
+  */
+
+  int queue_type;
+
+  printf("\n>Type of queue? \n");
+  printf("| 1 - normal      |\n");
+  printf("| 2 - priority    |\n");
+  printf("| 3 - circular    |\n");
+
+  scanf("%d", &queue_type);
+  switch (queue_type) {
+    case 1:
+      printf("Normal queue:      \n");
+      break;
+    case 2: 
+      printf("Priority queue:    \n");
+      break;
+    case 3: 
+      printf("Circular queue:    \n");
+      break;
+  default:
+    printf("\n>Invalid queue type \n");
+    break;
+  }
 
   while (k != 9) {
     printf("\n======== MENU ======== \n");
@@ -174,7 +274,17 @@ int main() {
         scanf("%d", &n);
 
         for(i = 0; i < n; i++) {
+          printf("\n>Value? \n");
           scanf("%d", &m);
+
+          // Priority queue
+          if(queue_type == 2) {
+            printf("\n>Priority? \n");
+            scanf("%d", &p);
+            p_enqueue(q, m, p);
+            continue;
+          }
+
           enqueue(q, m);
         }
         break;
@@ -188,7 +298,7 @@ int main() {
         break;
       case 3:
         printf("\n");
-        display_queue(q);
+        display_queue(q, queue_type);
         printf("\n");
         break;
       case 4:
@@ -201,7 +311,7 @@ int main() {
         printf("\n>Queue was sorted \n");
         break;
       case 6:
-        reverse(q);
+        reverse(q, queue_type);
         printf("\n>Queue was reversed \n");
         break;
       case 9:
