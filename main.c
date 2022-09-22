@@ -6,8 +6,6 @@
 #define QUEUE_EMPTY INT_MIN
 #define MIN_PRIORITY 999
 
-int arr[10001];
-
 // Linked list
 typedef struct Node {
 	int value;
@@ -17,8 +15,8 @@ typedef struct Node {
 
 // Queue 
 typedef struct Queue {
-	Node *head;
-	Node *tail;
+	Node* head;
+	Node* tail;
 } Queue;
 
 // Initialize a queue
@@ -122,17 +120,14 @@ void c_enqueue(Queue* q, int val) {
 }
 
 // returns an array with value and priority
-int* dequeue(Queue* q) {
-  static int res[2];
-
+int dequeue(Queue* q) {
 	// Empty queue
 	if (isEmpty(q))
-		return res;
+		return QUEUE_EMPTY;
 
 	// Store head 
 	Node* tmp = q->head;
-  res[0] = tmp->value;
-  res[1] = tmp->priority;
+  int res = tmp->value;
 
 	q->head = q->head->next;
 
@@ -142,6 +137,27 @@ int* dequeue(Queue* q) {
 
   // Deallocate the memory
 	free(tmp);
+
+  return res;
+}
+
+int c_dequeue(Queue* q) {
+  // Empty queue
+	if (isEmpty(q))
+		return QUEUE_EMPTY;
+
+  Node* tmp = q->head;
+  int res = tmp->value;
+
+  if(q->head == q->tail) {
+    q->head = q->tail = NULL;
+  }
+  else {
+    q->head = q->head->next;
+    q->tail->next = q->head;
+  }
+
+  free(tmp);
 
   return res;
 }
@@ -197,7 +213,9 @@ void queue_export(Queue* q, int queue_type, FILE* f) {
 
   if(queue_type == 3) {
     while(tmp->next != q->head) {
-      fprintf(f, "%d ", tmp->value);
+      if(tmp->value != 0) {
+        fprintf(f, "%d ", tmp->value);
+      }
       tmp = tmp->next;
     }
     fprintf(f, "%d\n", tmp->value);
@@ -208,12 +226,16 @@ void queue_export(Queue* q, int queue_type, FILE* f) {
     switch (queue_type) {
     // normal queue
     case 1:
-      fprintf(f, "%d ", tmp->value);
+      if(tmp->value != 0) {
+        fprintf(f, "%d ", tmp->value);
+      }
       break;
 
     // priority queue
     case 2:
-      fprintf(f, "%d!%d ", tmp->value, tmp->priority);
+      if(tmp->value != 0) {
+        fprintf(f, "%d!%d ", tmp->value, tmp->priority);
+      }
       break;
 
     default:
@@ -280,26 +302,15 @@ void sort(Queue* q, int n) {
   return;
 }
 
-void reverse(Queue *q, int queue_type) {
-  int tmp[2];
-
-  // Recursion base case: empty queue
-  if (q->head == NULL) {
-      return;
+void reverse(Queue *q) {
+  int tmp;
+  if (isEmpty(q)) {
+    return;
   }
-  
-  // using stack we dequeue each element
-  // then enque the value into the same queue
-  // tmp = dequeue(q);
-  memcpy(tmp, dequeue(q), sizeof dequeue(q));
-  reverse(q, queue_type);
 
-  if(queue_type == 1) {
-    enqueue(q, tmp[0]);
-  } else if(queue_type == 2) {
-    printf("%d(%d) <~~~ ", tmp[0], tmp[1]);
-    p_enqueue(q, tmp[0], tmp[1]);
-  }
+  tmp = dequeue(q);
+  reverse(q);
+  enqueue(q, tmp);
 }
 
 void c_reverse(Queue* q) {
@@ -324,11 +335,11 @@ void c_reverse(Queue* q) {
     // Iterate till you reach the initial node in circular list
     while (q->head != last)
     {
-        q->head= q->head->next;
-        cur->next = prev;
+      q->head= q->head->next;
+      cur->next = prev;
 
-        prev = cur;
-        cur  = q->head;
+      prev = cur;
+      cur  = q->head;
     }
 
     cur->next = prev;
@@ -400,16 +411,19 @@ int main() {
     for(j = 0; j < i; j++) {
       switch (queue_type) {
         case 1:
-          enqueue(q, q_arr[j]);
+          if(q_arr[j] != 0) 
+            enqueue(q, q_arr[j]);
           break;
 
         case 2:
-          p_enqueue(q, q_arr[j], q_arr[j+1]);
+          if(q_arr[j] != 0) 
+            p_enqueue(q, q_arr[j], q_arr[j+1]);
           j++;
           break;
         
         case 3:
-          c_enqueue(q, q_arr[j]);
+          if(q_arr[j] != 0) 
+            c_enqueue(q, q_arr[j]);
           break;
         
         default:
@@ -452,7 +466,11 @@ int main() {
   } 
 
   FILE* h;
-  h = fopen("input.txt", "w");
+  h = fopen("input.txt", "r");
+
+  if(queue_type_from_file == 'y') {
+    h = fopen("input.txt", "w");
+  }
 
   // Queue type
   switch (queue_type) {
@@ -502,7 +520,7 @@ int main() {
             scanf("%d", &p);
             p_enqueue(q, m, p);
             queue_export(q, queue_type, f);
-            queue_export(q, queue_type, h);
+            if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
             continue;
           }
 
@@ -510,13 +528,13 @@ int main() {
           if(queue_type == 3) {
             c_enqueue(q, m);
             queue_export(q, queue_type, f);
-            queue_export(q, queue_type, h);
+            if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
             continue;
           }
 
           enqueue(q, m);
           queue_export(q, queue_type, f);
-          queue_export(q, queue_type, h);
+          if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
         }
         break;
       case 2:
@@ -524,17 +542,21 @@ int main() {
         scanf("%d", &n);
 
         for(i = 0; i < n; i++) {
+          if(queue_type == 3) {
+            c_dequeue(q);
+            continue;
+          }
           dequeue(q);
         }
 
         queue_export(q, queue_type, f);
-        queue_export(q, queue_type, h);
+        if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
         break;
       case 3:
         printf("\n");
         display_queue(q, queue_type);
         queue_export(q, queue_type, f);
-        queue_export(q, queue_type, h);
+        if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
         printf("\n");
         break;
       case 4:
@@ -545,20 +567,20 @@ int main() {
       case 5:
         sort(q, get_n_elements(q));
         queue_export(q, queue_type, f);
-        queue_export(q, queue_type, h);
+        if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
         printf("\n>Queue was sorted \n");
         break;
       case 6:
         if(queue_type == 3) {
           c_reverse(q);
           queue_export(q, queue_type, f);
-          queue_export(q, queue_type, h);
+          if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
           printf("\n>Queue was reversed \n");
           break;
         }
-        reverse(q, queue_type);
+        reverse(q);
         queue_export(q, queue_type, f);
-        queue_export(q, queue_type, h);
+        if(queue_type_from_file == 'y') { queue_export(q, queue_type, h); }
         printf("\n>Queue was reversed \n");
         break;
       case 9:
@@ -571,7 +593,9 @@ int main() {
   }
 
   fclose(f);
-  fclose(h);
+  if(queue_type_from_file == 'y') {   
+    fclose(h);
+  }
 
 	return 0;
 }
