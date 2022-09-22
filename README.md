@@ -226,6 +226,58 @@ void c_enqueue(Queue* q, int val) {
 ```
 
 ## 5. Other functionalities
+### File handling
+There are 3 file pointers:
+- f is for writing the file output.txt
+- g is for reading the file input.txt
+- h is for writing/updating the file input.txt
+```
+    FILE* g;
+    g = fopen("input.txt", "r");
+
+    if(g == NULL) {
+      printf("\n>Error: Failed to open the file\n");
+    } 
+
+    char queue_data[1000];
+
+    char q_type[9];
+    fgets(queue_data, 1000, g);
+    strcpy(q_type, queue_data);
+
+    char q_elements[1000];
+    while(fgets(queue_data, 1000, g) != NULL) {
+      strcpy(q_elements, queue_data);
+    } 
+
+    ...
+```
+
+### Interactive menu
+![menu](/screenshots/menu.png)
+
+It's done simply using an infinite while loop and a switch statement.
+```
+while (k != 9) {
+    printf("\n======== MENU ======== \n");
+    printf("| 1 - enqueue        |\n");
+    printf("| 2 - dequeue        |\n");
+    printf("| 3 - show queue     |\n");
+    printf("| 4 - search         |\n");
+    printf("| 5 - sort           |\n");
+    printf("| 6 - reverse        |\n");
+    printf("| 9 - save & exit    |\n");
+    printf("======== MENU ======== \n");
+    
+    scanf("%d", &k);
+
+    switch (k) {
+      case 1:
+        printf("\n>How many elements to enqueue? \n");
+        scanf("%d", &n);
+  ...
+```
+
 ### Display queue
 ```
 void display_queue(Queue* q, int queue_type) {
@@ -269,49 +321,4 @@ void display_queue(Queue* q, int queue_type) {
     tmp = tmp->next;
   }
 }
-```
-
-### File handling
-```
-    FILE* g;
-    g = fopen("input.txt", "r");
-
-    if(g == NULL) {
-      printf("\n>Error: Failed to open the file\n");
-    } 
-
-    char queue_data[1000];
-
-    char q_type[9];
-    fgets(queue_data, 1000, g);
-    strcpy(q_type, queue_data);
-
-    char q_elements[1000];
-    while(fgets(queue_data, 1000, g) != NULL) {
-      strcpy(q_elements, queue_data);
-    } 
-
-    ...
-```
-### Interactive menu
-![menu](/screenshots/menu.png)
-```
-while (k != 9) {
-    printf("\n======== MENU ======== \n");
-    printf("| 1 - enqueue        |\n");
-    printf("| 2 - dequeue        |\n");
-    printf("| 3 - show queue     |\n");
-    printf("| 4 - search         |\n");
-    printf("| 5 - sort           |\n");
-    printf("| 6 - reverse        |\n");
-    printf("| 9 - save & exit    |\n");
-    printf("======== MENU ======== \n");
-    
-    scanf("%d", &k);
-
-    switch (k) {
-      case 1:
-        printf("\n>How many elements to enqueue? \n");
-        scanf("%d", &n);
-  ...
 ```
